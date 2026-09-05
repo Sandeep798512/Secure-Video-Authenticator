@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Secure Video Authenticator{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --card-bg: #131b2e;
+            --border-color: #1e293b;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+        }
+        body {
+            background-color: var(--bg-dark);
+            color: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+            color: white;
+        }
+        .badge-authentic {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.3);
+        }
+        .badge-suspicious {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+        .hash-code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.72rem;
+            background: #060911;
+            padding: 6px 10px;
+            border-radius: 6px;
+            color: #34d399;
+            border: 1px solid #1e293b;
+            word-break: break-all;
+        }
+        video {
+            border-radius: 12px;
+            background-color: #000;
+            width: 100%;
+            max-height: 220px;
+            object-fit: cover;
+        }
+        .stat-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 18px;
+        }
+        footer {
+            margin-top: auto;
+            border-top: 1px solid #1e293b;
+            background-color: #070a12;
+        }
+        @media print {
+            .navbar, footer, .btn, .no-print {
+                display: none !important;
+            }
+            body {
+                background-color: #fff !important;
+                color: #000 !important;
+            }
+            .glass-card, .stat-card {
+                background: #fff !important;
+                color: #000 !important;
+                border: 1px solid #ccc !important;
+                box-shadow: none !important;
+            }
+            .hash-code {
+                background: #f1f5f9 !important;
+                color: #0f172a !important;
+                border: 1px solid #cbd5e1 !important;
+            }
+            .table-dark {
+                --bs-table-bg: #fff !important;
+                --bs-table-color: #000 !important;
+            }
+            .text-secondary, .text-light {
+                color: #333 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg sticky-top py-3">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'video_list' %}">
+                <i class="bi bi-shield-lock-fill text-info fs-3"></i>
+                <span>Secure Video Authenticator</span>
+            </a>
+            <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-light fw-medium" href="{% url 'video_list' %}">
+                            <i class="bi bi-collection-play me-1 text-cyan"></i> Video Gallery
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="btn btn-gradient px-3 py-2 btn-sm" href="{% url 'video_upload' %}">
+                                <i class="bi bi-cloud-arrow-up me-1"></i> Upload & Authenticate
+                            </a>
+                        </li>
+                        <li class="nav-item text-secondary ms-lg-2">
+                            <span class="badge bg-dark border border-secondary px-3 py-2 text-light">
+                                <i class="bi bi-person-fill me-1 text-info"></i> {{ user.username }}
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-danger btn-sm px-3 py-2" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right me-1"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm px-3 py-2" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-gradient btn-sm px-3 py-2" href="{% url 'signup' %}">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container py-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show border-0 shadow-lg text-light" style="background-color: #1e293b;" role="alert">
+                    <i class="bi bi-info-circle-fill text-cyan me-2"></i> {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-secondary small">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>&copy; Secure Video Authenticator - Cryptographic Media Authentication Platform</span>
+                <span>SHA-256 & Dynamic Header Verification Engine</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Global Utility JS -->
+    <script>
+        function copyToClipboard(text, btnElement) {
+            navigator.clipboard.writeText(text).then(function() {
+                const originalHTML = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="bi bi-check-lg text-success"></i> Copied!';
+                btnElement.classList.add('border-success');
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.classList.remove('border-success');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Copy failed: ', err);
+            });
+        }
+    </script>
+</body>
+</html>

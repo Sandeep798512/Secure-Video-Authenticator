@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Forensic Audit Report - {{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 no-print">
+    <a href="{% url 'video_list' %}" class="text-info text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+    <button onclick="window.print()" class="btn btn-outline-cyan btn-sm px-3">
+        <i class="bi bi-printer-fill me-1"></i> Print / Download PDF Certificate
+    </button>
+</div>
+
+<!-- Official Forensic Header for Print / Display -->
+<div class="glass-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="text-info small fw-bold text-uppercase tracking-wider">Official Digital Evidence Report</div>
+            <h3 class="fw-bold text-light mb-0"><i class="bi bi-shield-check me-2 text-cyan"></i>Forensic Authenticity Certificate</h3>
+        </div>
+        <div class="text-end">
+            <span class="badge rounded-pill fs-6 px-3 py-2 
+                {% if 'Authentic' in video.verification_status %}badge-authentic
+                {% elif 'Suspicious' in video.verification_status or 'Fake' in video.verification_status or 'Invalid' in video.verification_status %}badge-suspicious
+                {% else %}badge-pending{% endif %}">
+                {{ video.verification_status }}
+            </span>
+            <div class="text-secondary small mt-1">Audit ID: #VA-{{ video.id }}-{{ video.uploaded_at|date:"Ymd" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Video Player & Playback Speed Column -->
+    <div class="col-lg-6 no-print">
+        <div class="glass-card p-3 h-100 d-flex flex-column">
+            <h5 class="fw-bold text-light mb-3"><i class="bi bi-play-circle-fill me-2 text-cyan"></i>Media Preview & Speed Control</h5>
+            <div class="bg-black text-center p-2 rounded-3 flex-grow-1 d-flex align-items-center justify-content-center">
+                {% if video.file %}
+                <video id="forensicVideo" controls style="max-height: 360px; width: 100%;">
+                    <source src="{{ video.file.url }}" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+                {% else %}
+                <div class="py-5 text-secondary">File missing from media storage</div>
+                {% endif %}
+            </div>
+
+            <!-- Playback Speed Controls -->
+            {% if video.file %}
+            <div class="mt-3 p-2 bg-dark rounded border border-secondary d-flex justify-content-between align-items-center">
+                <small class="text-secondary fw-semibold"><i class="bi bi-speedometer2 me-1 text-info"></i> Playback Speed:</small>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary text-light" onclick="setSpeed(0.5)">0.5x (Slow)</button>
+                    <button type="button" class="btn btn-outline-secondary text-light active" onclick="setSpeed(1.0)">1.0x (Normal)</button>
+                    <button type="button" class="btn btn-outline-secondary text-light" onclick="setSpeed(1.5)">1.5x</button>
+                    <button type="button" class="btn btn-outline-secondary text-light" onclick="setSpeed(2.0)">2.0x (Fast)</button>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-3">
+                <h5 class="fw-bold text-light mb-1">{{ video.title }}</h5>
+                <p class="text-secondary small mb-0">{{ video.description|default:"No description provided." }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forensic Specifications & Checksums Column -->
+    <div class="col-lg-6">
+        <div class="glass-card p-4 h-100">
+            <h5 class="fw-bold text-light mb-3"><i class="bi bi-card-checklist me-2 text-cyan"></i>Cryptographic Inspection Details</h5>
+
+            <!-- Score Progress Card -->
+            <div class="stat-card mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-secondary fw-medium">Authenticity Confidence Rating</span>
+                    <span class="fs-4 fw-bold {% if video.authenticity_score >= 90 %}text-success{% elif video.authenticity_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ video.authenticity_score }} / 100%
+                    </span>
+                </div>
+                <div class="progress bg-dark" style="height: 10px;">
+                    <div class="progress-bar {% if video.authenticity_score >= 90 %}bg-success{% elif video.authenticity_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ video.authenticity_score }}%"></div>
+                </div>
+            </div>
+
+            <!-- Technical Specifications Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-dark table-borderless align-middle small">
+                    <tbody>
+                        <tr>
+                            <td class="text-secondary" style="width: 38%;"><i class="bi bi-fingerprint me-2 text-cyan"></i>SHA-256 Checksum</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="hash-code flex-grow-1">{{ video.file_hash|default:"N/A" }}</div>
+                                    <button class="btn btn-dark btn-sm py-1 px-2 text-info fs-7 border-secondary no-print" onclick="copyToClipboard('{{ video.file_hash }}', this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-secondary"><i class="bi bi-hash me-2 text-cyan"></i>MD5 Checksum</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="hash-code flex-grow-1" style="color: #60a5fa;">{{ video.md5_hash|default:"N/A" }}</div>
+                                    <button class="btn btn-dark btn-sm py-1 px-2 text-info fs-7 border-secondary no-print" onclick="copyToClipboard('{{ video.md5_hash }}', this)">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-secondary"><i class="bi bi-box me-2 text-cyan"></i>Container Format</td>
+                            <td><span class="badge bg-dark border border-secondary text-light">{{ video.container_format|default:"Unknown" }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-secondary"><i class="bi bi-hdd me-2 text-cyan"></i>File Size</td>
+                            <td class="text-light fw-medium">{{ video.formatted_size }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-secondary"><i class="bi bi-person me-2 text-cyan"></i>Uploaded By</td>
+                            <td class="text-light fw-medium">{{ video.uploaded_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-secondary"><i class="bi bi-clock me-2 text-cyan"></i>Timestamp</td>
+                            <td class="text-light fw-medium">{{ video.uploaded_at|date:"F d, Y - H:i:s T" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Verification Audit Notes -->
+            <div class="stat-card">
+                <h6 class="fw-bold text-light mb-2"><i class="bi bi-journal-text me-2 text-info"></i>Audit Inspection Log</h6>
+                <p class="text-secondary small mb-0" style="line-height: 1.6;">
+                    {{ video.verification_notes|default:"No specific verification notes recorded." }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setSpeed(speed) {
+        const vid = document.getElementById("forensicVideo");
+        if (vid) {
+            vid.playbackRate = speed;
+            document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active', 'btn-info'));
+            event.target.classList.add('active');
+        }
+    }
+</script>
+{% endblock %}

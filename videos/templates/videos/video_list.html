@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard & Gallery - Secure Video Authenticator{% endblock %}
+
+{% block content %}
+<!-- Stat Counters Header -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-medium">Total Videos</div>
+                    <div class="fs-3 fw-bold text-light">{{ stats.total }}</div>
+                </div>
+                <div class="p-3 rounded-3 bg-dark text-cyan fs-4">
+                    <i class="bi bi-film"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-medium">Verified Authentic</div>
+                    <div class="fs-3 fw-bold text-emerald" style="color: #34d399;">{{ stats.authentic }}</div>
+                </div>
+                <div class="p-3 rounded-3 bg-dark text-success fs-4">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-medium">Tampered / Suspicious</div>
+                    <div class="fs-3 fw-bold text-danger">{{ stats.suspicious }}</div>
+                </div>
+                <div class="p-3 rounded-3 bg-dark text-danger fs-4">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="text-secondary small fw-medium">Pending / Warnings</div>
+                    <div class="fs-3 fw-bold text-warning">{{ stats.pending }}</div>
+                </div>
+                <div class="p-3 rounded-3 bg-dark text-warning fs-4">
+                    <i class="bi bi-shield-slash-fill"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if stats.total > 0 %}
+<!-- Forensic Analytics Chart Widget -->
+<div class="glass-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-light mb-0"><i class="bi bi-pie-chart-fill me-2 text-cyan"></i>Forensic Authenticity Distribution</h5>
+        <span class="badge bg-dark border border-secondary text-secondary">Real-Time Chart Analytics</span>
+    </div>
+    <div class="row align-items-center">
+        <div class="col-md-5 text-center">
+            <div style="max-width: 200px; margin: 0 auto;">
+                <canvas id="authenticityChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="d-flex flex-column gap-2">
+                <div class="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                    <span class="small text-light"><i class="bi bi-circle-fill me-2 text-success"></i> Verified Authentic Media</span>
+                    <span class="badge bg-success">{{ stats.authentic }}</span>
+                </div>
+                <div class="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                    <span class="small text-light"><i class="bi bi-circle-fill me-2 text-danger"></i> Suspicious / Tampered Media</span>
+                    <span class="badge bg-danger">{{ stats.suspicious }}</span>
+                </div>
+                <div class="p-2 rounded bg-dark border border-secondary d-flex justify-content-between align-items-center">
+                    <span class="small text-light"><i class="bi bi-circle-fill me-2 text-warning"></i> Warnings / Pending Inspection</span>
+                    <span class="badge bg-warning text-dark">{{ stats.pending }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('authenticityChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Authentic', 'Suspicious', 'Warnings'],
+                datasets: [{
+                    data: [{{ stats.authentic }}, {{ stats.suspicious }}, {{ stats.pending }}],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false }
+                },
+                cutout: '70%'
+            }
+        });
+    });
+</script>
+{% endif %}
+
+<!-- Search & Filter Controls -->
+<div class="glass-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" value="{{ query }}" class="form-control bg-dark text-light border-secondary" placeholder="Search by title, description, or SHA-256 hash...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="status" class="form-select bg-dark text-light border-secondary" onchange="this.form.submit()">
+                <option value="" {% if not status_filter %}selected{% endif %}>Filter by Status: All</option>
+                <option value="authentic" {% if status_filter == 'authentic' %}selected{% endif %}>Verified Authentic Only</option>
+                <option value="suspicious" {% if status_filter == 'suspicious' %}selected{% endif %}>Suspicious / Tampered</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Warnings / Pending</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-outline-cyan btn-sm py-2">Apply Filters</button>
+        </div>
+    </form>
+</div>
+
+<!-- Video Grid Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="fw-bold mb-0 text-light"><i class="bi bi-collection-play me-2 text-cyan"></i>Authenticated Media Collection</h4>
+    {% if user.is_authenticated %}
+    <a href="{% url 'video_upload' %}" class="btn btn-gradient btn-sm px-3 py-2">
+        <i class="bi bi-plus-lg me-1"></i> Upload New Video
+    </a>
+    {% endif %}
+</div>
+
+<!-- Video Cards Grid -->
+<div class="row g-4">
+    {% for video in videos %}
+    <div class="col-md-6 col-lg-4">
+        <div class="glass-card h-100 d-flex flex-column overflow-hidden">
+            <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <span class="badge rounded-pill px-3 py-2 
+                    {% if 'Authentic' in video.verification_status %}badge-authentic
+                    {% elif 'Suspicious' in video.verification_status or 'Fake' in video.verification_status or 'Invalid' in video.verification_status %}badge-suspicious
+                    {% else %}badge-pending{% endif %}">
+                    <i class="bi bi-shield-check me-1"></i> {{ video.verification_status }}
+                </span>
+                <span class="badge bg-dark border border-secondary text-secondary">
+                    {{ video.container_format|default:"MP4 Video" }}
+                </span>
+            </div>
+
+            <div class="p-2 bg-black text-center">
+                {% if video.file %}
+                <video controls preload="metadata">
+                    <source src="{{ video.file.url }}" type="video/mp4">
+                    Your browser does not support HTML5 video.
+                </video>
+                {% else %}
+                <div class="py-5 text-secondary">Video File Unavailable</div>
+                {% endif %}
+            </div>
+
+            <div class="p-3 d-flex flex-column flex-grow-1">
+                <h5 class="fw-bold text-light mb-1">{{ video.title }}</h5>
+                <p class="text-secondary small mb-3 flex-grow-1">
+                    {{ video.description|default:"No description provided."|truncatewords:15 }}
+                </p>
+
+                <!-- Authenticity Progress Score -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between small text-secondary mb-1">
+                        <span>Authenticity Score</span>
+                        <span class="fw-bold {% if video.authenticity_score >= 90 %}text-success{% elif video.authenticity_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                            {{ video.authenticity_score }}%
+                        </span>
+                    </div>
+                    <div class="progress bg-dark" style="height: 6px;">
+                        <div class="progress-bar {% if video.authenticity_score >= 90 %}bg-success{% elif video.authenticity_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ video.authenticity_score }}%"></div>
+                    </div>
+                </div>
+
+                {% if video.file_hash %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-secondary"><i class="bi bi-fingerprint me-1"></i>SHA-256 Checksum:</small>
+                        <button class="btn btn-dark btn-sm py-0 px-2 text-info fs-7 border-secondary" onclick="copyToClipboard('{{ video.file_hash }}', this)">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <div class="hash-code">{{ video.file_hash }}</div>
+                </div>
+                {% endif %}
+
+                <div class="pt-3 border-top border-secondary mt-auto d-flex justify-content-between align-items-center">
+                    <div class="small text-secondary">
+                        <i class="bi bi-person me-1 text-info"></i>{{ video.uploaded_by.username }}
+                        <span class="ms-2"><i class="bi bi-hdd me-1"></i>{{ video.formatted_size }}</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'video_detail' video.id %}" class="btn btn-outline-cyan btn-sm px-2 py-1" title="View Detailed Audit Report">
+                            <i class="bi bi-card-checklist"></i> Audit
+                        </a>
+                        {% if user == video.uploaded_by or user.is_staff %}
+                        <a href="{% url 'video_delete' video.id %}" class="btn btn-outline-danger btn-sm px-2 py-1" onclick="return confirm('Delete this video from server permanently?');" title="Delete Video">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="glass-card p-5">
+            <i class="bi bi-shield-slash fs-1 text-secondary mb-3"></i>
+            <h4 class="text-light">No Videos Found</h4>
+            <p class="text-secondary">No media matches your search query or filter criteria.</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'video_upload' %}" class="btn btn-gradient px-4 mt-2">
+                <i class="bi bi-cloud-arrow-up me-2"></i>Upload Video Now
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
